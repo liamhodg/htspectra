@@ -171,3 +171,4 @@ cython_debug/
 .pypirc
 
 tmp.zarr
+phi3_experiments.ipynb
