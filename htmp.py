@@ -20,7 +20,7 @@ class marchenko_pastur_gen(rv_continuous):
     """
 
     def __init__(self, gam, scale=1):
-        c = 1/gam
+        c = gam
         if not (0 < c <= 1):
             raise ValueError("Parameter 'gam' must be >= 1.")
         self.c = c
@@ -88,20 +88,20 @@ class _htmp(rv_continuous):
         self.kappa_max = kappa_max
 
     def _get_ab(self, gam, kap):
-        a = kap * (1 / gam - 1) - 1
-        b = kap
+        a = kap/2 * (1 / gam - 1) - 1
+        b = kap/2
         return a,b
 
     def _logpdf(self, x, gam, kap):
         a,b = self._get_ab(gam,kap)
-        y = b*x
-        const = -loggamma(kap + 1) - loggamma(1 + kap + a) + np.log(gam*b)
-        return const + a*np.log(y) - y - _log_neg_hypu(kap, a, y)
+        y = b/gam * x
+        const = -loggamma(b+1) - loggamma(a+b+1) + np.log(b/gam)
+        return const + a*np.log(y) - y - _log_neg_hypu(b, a, y)
     
     def _logpxf(self, x, gam, kap):
         return self._logpdf(x, gam, kap)
     
-    def _pdf(self, x, gam, kap):
+    def pdf(self, x, gam, kap):
         return np.exp(self._logpdf(x, gam, kap))
 
     def _argcheck(self, *args):
@@ -120,15 +120,15 @@ class _htmp(rv_continuous):
     
     def _cdf_mpm(self, x, gam, kap):
         a,b = self._get_ab(gam,kap)
-        const = -mpm.loggamma(kap+1) - mpm.loggamma(1+kap+a) + np.log(gam*b)
-        integ = lambda t: (b*t)**a * mpm.exp(-(b*t)) / \
-                    mpm.fabs(mpm.hyperu(kap,-a,-b*t))**2
+        const = -mpm.loggamma(b+1) - mpm.loggamma(a+b+1) + np.log(b/gam)
+        integ = lambda t: (b/gam*t)**a * mpm.exp(-b/gam*t) / \
+                    mpm.fabs(mpm.hyperu(b,-a,-b/gam*t))**2
         return mpm.quad(integ, [0, x]) * mpm.exp(const)
     
     def _stieltjes(self, x, gam, kap):
         a,b = self._get_ab(gam,kap)
-        numer = mpm.hyperu(kap+1,1-a,-x)
-        denom = mpm.hyperu(kap,-a,-x)
+        numer = mpm.hyperu(b+1,1-a,-x)
+        denom = mpm.hyperu(b,-a,-x)
         return numer / denom
 
     def _cdf(self, x, gam, kap):
